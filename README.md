@@ -44,8 +44,8 @@ go run .
 ```
 .
 ├── main.go         # Server setup and configuration
-├── readiness.go    # Health check handler
-├── reset.go        # Metrics reset handler
+├── handlers.go     # HTTP endpoint handlers
+├── middleware.go   # HTTP middleware functions
 ├── index.html      # Landing page
 └── assets/         # Static assets (images, etc.)
 ```

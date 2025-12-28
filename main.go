@@ -40,28 +40,3 @@ func main() {
 	}
 }
 
-func (a *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.fileserverHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (a *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "fileserver_hits %d\n", a.fileserverHits.Load())
-}
-
-func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte(http.StatusText(http.StatusOK)))
-}
-
-func (a *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	a.fileserverHits.Store(0)
-	w.Write([]byte("Hits reset to 0\n"))
-}
