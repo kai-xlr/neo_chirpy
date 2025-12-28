@@ -20,7 +20,7 @@ func (a *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "fileserver_hits %d\n", a.fileserverHits.Load())
+	fmt.Fprintf(w, "Hits: %d", a.fileserverHits.Load())
 }
 
 func (a *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
