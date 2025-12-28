@@ -16,7 +16,9 @@ A lightweight HTTP server written in Go with built-in metrics tracking.
 - `GET /app/*` - File server with request tracking
 - `GET /healthz` - Health check endpoint (returns "OK")
 - `GET /metrics` - Display hit counter
-- `GET /reset` - Reset hit counter to 0
+- `POST /reset` - Reset hit counter to 0
+
+All endpoints return 405 (Method Not Allowed) for unsupported HTTP methods.
 
 ## Getting Started
 
