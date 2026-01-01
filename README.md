@@ -1,6 +1,6 @@
 # NeoChirpy
 
-A lightweight HTTP server written in Go with built-in metrics tracking and chirp validation.
+A lightweight HTTP server written in Go with built-in metrics tracking, chirp validation, and PostgreSQL database integration.
 
 ## Features
 
@@ -9,6 +9,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking and chirp
 - **Health Check**: Provides a readiness endpoint for monitoring
 - **Chirp Validation**: Validates chirp messages (max 140 characters)
 - **Profanity Filtering**: Automatically sanitizes banned words in chirps
+- **Database Integration**: PostgreSQL database with user management
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
 
@@ -33,6 +34,8 @@ All endpoints return 405 (Method Not Allowed) for unsupported HTTP methods.
 ### Prerequisites
 
 - Go 1.25.2 or higher
+- PostgreSQL database
+- Environment variables configured (see Configuration)
 
 ### Running the Server
 
@@ -42,6 +45,14 @@ go build -o out
 ```
 
 The server will start on port 8080.
+
+### Configuration
+
+Create a `.env` file in the project root:
+
+```env
+DB_URL=postgres://username:password@localhost:5432/chirpy?sslmode=disable
+```
 
 ### Development
 
@@ -58,6 +69,10 @@ go run .
 ├── middleware.go   # HTTP middleware functions
 ├── json.go         # JSON response helpers
 ├── sanitize.go     # Profanity filtering logic
+├── sql/
+│   └── schema/     # Database migration files
+├── internal/
+│   └── database/   # Generated database access code
 ├── index.html      # Landing page
 └── assets/         # Static assets (images, etc.)
 ```
@@ -67,5 +82,6 @@ go run .
 - **Thread-Safe Metrics**: Uses `atomic.Int32` for concurrent request counting
 - **Middleware Pattern**: Request tracking implemented as HTTP middleware
 - **JSON API**: Structured error handling and JSON responses
-- **Code Organization**: Helper functions reduce duplication (e.g., `requireMethod` for HTTP method validation)
-- **Standard Library**: Built entirely with Go's standard `net/http` and `encoding/json` packages
+- **Code Organization**: Modular main function with `initDatabase()`, `setupRouter()`, and `startServer()` helpers
+- **Database Layer**: PostgreSQL with sqlc-generated type-safe queries
+- **Migration Management**: Goose for database schema versioning
