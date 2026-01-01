@@ -6,9 +6,17 @@ import (
 	"net/http"
 )
 
-func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+// requireMethod validates the HTTP method and returns false if invalid
+func requireMethod(w http.ResponseWriter, r *http.Request, method string) bool {
+	if r.Method != method {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return false
+	}
+	return true
+}
+
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -16,12 +24,10 @@ func handlerReadiness(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `<html>
   <body>
     <h1>Welcome, Chirpy Admin</h1>
@@ -31,29 +37,29 @@ func (a *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
 	a.fileserverHits.Store(0)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte("Hits reset to 0\n"))
 }
 
+type chirpRequest struct {
+	Body string `json:"body"`
+}
+
+type chirpResponse struct {
+	CleanedBody string `json:"cleaned_body"`
+}
+
 func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
-	type parameters struct {
-		Body string `json:"body"`
-	}
-	type returnVals struct {
-		Valid bool `json:"valid"`
-	}
 
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
+	var params chirpRequest
+	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
@@ -65,7 +71,9 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, returnVals{
-		Valid: true,
+	cleaned := cleanChirp(params.Body)
+
+	respondWithJSON(w, http.StatusOK, chirpResponse{
+		CleanedBody: cleaned,
 	})
 }

@@ -8,6 +8,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking and chirp
 - **Request Metrics**: Tracks the number of requests to `/app/*` endpoints
 - **Health Check**: Provides a readiness endpoint for monitoring
 - **Chirp Validation**: Validates chirp messages (max 140 characters)
+- **Profanity Filtering**: Automatically sanitizes banned words in chirps
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
 
@@ -19,7 +20,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking and chirp
 
 ### API
 - `GET /api/healthz` - Health check endpoint (returns "OK")
-- `POST /api/validate_chirp` - Validate chirp message (max 140 characters)
+- `POST /api/validate_chirp` - Validate and sanitize chirp message (max 140 characters, filters profanity)
 
 ### Admin
 - `GET /admin/metrics` - Display hit counter with HTML dashboard
@@ -56,6 +57,7 @@ go run .
 ├── handlers.go     # HTTP endpoint handlers
 ├── middleware.go   # HTTP middleware functions
 ├── json.go         # JSON response helpers
+├── sanitize.go     # Profanity filtering logic
 ├── index.html      # Landing page
 └── assets/         # Static assets (images, etc.)
 ```
@@ -65,4 +67,5 @@ go run .
 - **Thread-Safe Metrics**: Uses `atomic.Int32` for concurrent request counting
 - **Middleware Pattern**: Request tracking implemented as HTTP middleware
 - **JSON API**: Structured error handling and JSON responses
+- **Code Organization**: Helper functions reduce duplication (e.g., `requireMethod` for HTTP method validation)
 - **Standard Library**: Built entirely with Go's standard `net/http` and `encoding/json` packages
