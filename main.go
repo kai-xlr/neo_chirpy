@@ -21,16 +21,18 @@ const (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
+	platform       string
 }
 
 func main() {
 	// Load environment and initialize database
-	dbQueries := initDatabase()
+	dbQueries, platform := initDatabase()
 
 	// Initialize API configuration
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
+		platform:       platform,
 	}
 
 	// Setup HTTP router
@@ -40,11 +42,16 @@ func main() {
 	startServer(mux)
 }
 
-func initDatabase() *database.Queries {
+func initDatabase() (*database.Queries, string) {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
+	}
+
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
 	}
 
 	db, err := sql.Open("postgres", dbURL)
@@ -52,7 +59,7 @@ func initDatabase() *database.Queries {
 		log.Fatalf("Error opening database: %s", err)
 	}
 
-	return database.New(db)
+	return database.New(db), platform
 }
 
 func setupRouter(apiCfg *apiConfig) *http.ServeMux {
@@ -66,6 +73,7 @@ func setupRouter(apiCfg *apiConfig) *http.ServeMux {
 	// API endpoints
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/api/validate_chirp", handlerChirpsValidate)
+	mux.HandleFunc("/api/users", apiCfg.handlerUsersCreate)
 
 	// Admin endpoints
 	mux.HandleFunc("/admin/metrics", apiCfg.handlerMetrics)

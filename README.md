@@ -22,10 +22,11 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 ### API
 - `GET /api/healthz` - Health check endpoint (returns "OK")
 - `POST /api/validate_chirp` - Validate and sanitize chirp message (max 140 characters, filters profanity)
+- `POST /api/users` - Create a new user account
 
 ### Admin
 - `GET /admin/metrics` - Display hit counter with HTML dashboard
-- `POST /admin/reset` - Reset hit counter to 0
+- `POST /admin/reset` - Reset hit counter and database (dev environment only)
 
 All endpoints return 405 (Method Not Allowed) for unsupported HTTP methods.
 
@@ -52,6 +53,7 @@ Create a `.env` file in the project root:
 
 ```env
 DB_URL=postgres://username:password@localhost:5432/chirpy?sslmode=disable
+PLATFORM=dev
 ```
 
 ### Development
@@ -64,17 +66,20 @@ go run .
 
 ```
 .
-├── main.go         # Server setup and configuration
-├── handlers.go     # HTTP endpoint handlers
-├── middleware.go   # HTTP middleware functions
-├── json.go         # JSON response helpers
-├── sanitize.go     # Profanity filtering logic
+├── main.go            # Server setup and configuration
+├── handlers.go        # HTTP helper functions
+├── handlers_api.go    # API endpoint handlers
+├── handlers_admin.go  # Admin endpoint handlers
+├── handlers_users.go  # User management handlers
+├── middleware.go      # HTTP middleware functions
+├── json.go            # JSON response helpers
+├── sanitize.go        # Profanity filtering logic
 ├── sql/
-│   └── schema/     # Database migration files
+│   └── schema/        # Database migration files
 ├── internal/
-│   └── database/   # Generated database access code
-├── index.html      # Landing page
-└── assets/         # Static assets (images, etc.)
+│   └── database/      # Generated database access code
+├── index.html         # Landing page
+└── assets/            # Static assets (images, etc.)
 ```
 
 ## Architecture
@@ -82,6 +87,9 @@ go run .
 - **Thread-Safe Metrics**: Uses `atomic.Int32` for concurrent request counting
 - **Middleware Pattern**: Request tracking implemented as HTTP middleware
 - **JSON API**: Structured error handling and JSON responses
-- **Code Organization**: Modular main function with `initDatabase()`, `setupRouter()`, and `startServer()` helpers
+- **Code Organization**: 
+  - Main function split into `initDatabase()`, `setupRouter()`, and `startServer()` helpers
+  - Handlers organized by domain (API, Admin, Users)
+  - Consistent file structure: package → imports → structs → functions
 - **Database Layer**: PostgreSQL with sqlc-generated type-safe queries
 - **Migration Management**: Goose for database schema versioning
