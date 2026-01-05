@@ -11,7 +11,7 @@ func (a *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Type", ContentTypeTextHTML)
 	fmt.Fprintf(w, `<html>
   <body>
     <h1>Welcome, Chirpy Admin</h1>
@@ -36,6 +36,6 @@ func (a *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Failed to reset the database: " + err.Error()))
 		return
 	}
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", ContentTypeTextPlain)
 	w.Write([]byte("Hits reset to 0 and database reset to initial state."))
 }

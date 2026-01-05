@@ -7,9 +7,9 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - **Static File Serving**: Serves HTML, CSS, and assets from the root directory
 - **Request Metrics**: Tracks the number of requests to `/app/*` endpoints
 - **Health Check**: Provides a readiness endpoint for monitoring
-- **Chirp Validation**: Validates chirp messages (max 140 characters)
+- **Chirp Management**: Create and store chirp messages (max 140 characters)
 - **Profanity Filtering**: Automatically sanitizes banned words in chirps
-- **Database Integration**: PostgreSQL database with user management
+- **Database Integration**: PostgreSQL database with user and chirp management
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
 
@@ -21,7 +21,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 
 ### API
 - `GET /api/healthz` - Health check endpoint (returns "OK")
-- `POST /api/validate_chirp` - Validate and sanitize chirp message (max 140 characters, filters profanity)
+- `POST /api/chirps` - Create a new chirp (max 140 characters, filters profanity)
 - `POST /api/users` - Create a new user account
 
 ### Admin
@@ -67,6 +67,9 @@ go run .
 ```
 .
 ├── main.go            # Server setup and configuration
+├── types.go           # Request/response type definitions
+├── constants.go       # Application-wide constants
+├── validation.go      # Input validation functions
 ├── handlers.go        # HTTP helper functions
 ├── handlers_api.go    # API endpoint handlers
 ├── handlers_admin.go  # Admin endpoint handlers
@@ -75,7 +78,8 @@ go run .
 ├── json.go            # JSON response helpers
 ├── sanitize.go        # Profanity filtering logic
 ├── sql/
-│   └── schema/        # Database migration files
+│   ├── schema/        # Database migration files
+│   └── queries/       # SQL queries for sqlc
 ├── internal/
 │   └── database/      # Generated database access code
 ├── index.html         # Landing page
@@ -91,5 +95,8 @@ go run .
   - Main function split into `initDatabase()`, `setupRouter()`, and `startServer()` helpers
   - Handlers organized by domain (API, Admin, Users)
   - Consistent file structure: package → imports → structs → functions
+  - Centralized validation with reusable functions
+- **Input Validation**: Dedicated validation package with error constants
+- **Testing**: Unit tests for validation logic
 - **Database Layer**: PostgreSQL with sqlc-generated type-safe queries
 - **Migration Management**: Goose for database schema versioning

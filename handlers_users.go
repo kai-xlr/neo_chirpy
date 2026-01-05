@@ -3,27 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"time"
-
-	"github.com/google/uuid"
 )
-
-// User endpoint handlers
-
-type userRequest struct {
-	Email string `json:"email"`
-}
-
-type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-}
-
-type userResponse struct {
-	User
-}
 
 func (a *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodPost) {
@@ -34,6 +14,12 @@ func (a *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
+		return
+	}
+
+	// Validate email
+	if err := ValidateEmail(params.Email); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
