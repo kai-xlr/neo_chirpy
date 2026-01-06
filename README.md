@@ -21,6 +21,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 
 ### API
 - `GET /api/healthz` - Health check endpoint (returns "OK")
+- `GET /api/chirps` - Retrieve all chirps (ordered by creation date, oldest first)
 - `POST /api/chirps` - Create a new chirp (max 140 characters, filters profanity)
 - `POST /api/users` - Create a new user account
 
@@ -62,6 +63,22 @@ PLATFORM=dev
 go run .
 ```
 
+### Testing
+
+```bash
+# Run all tests
+go test
+
+# Run tests with verbose output
+go test -v
+
+# Run specific test function
+go test -run TestValidateChirpBody
+
+# Run tests with coverage
+go test -cover
+```
+
 ## Project Structure
 
 ```
@@ -70,13 +87,15 @@ go run .
 ├── types.go           # Request/response type definitions
 ├── constants.go       # Application-wide constants
 ├── validation.go      # Input validation functions
+├── validation_test.go # Unit tests for validation
 ├── handlers.go        # HTTP helper functions
-├── handlers_api.go    # API endpoint handlers
+├── handlers_api.go    # API endpoint handlers (with documentation)
 ├── handlers_admin.go  # Admin endpoint handlers
 ├── handlers_users.go  # User management handlers
 ├── middleware.go      # HTTP middleware functions
-├── json.go            # JSON response helpers
+├── json.go            # JSON response helpers and response builders
 ├── sanitize.go        # Profanity filtering logic
+├── AGENTS.md          # Guidelines for agentic coding agents
 ├── sql/
 │   ├── schema/        # Database migration files
 │   └── queries/       # SQL queries for sqlc
@@ -96,6 +115,8 @@ go run .
   - Handlers organized by domain (API, Admin, Users)
   - Consistent file structure: package → imports → structs → functions
   - Centralized validation with reusable functions
+  - Comprehensive documentation and response builders
+  - Error handling with standardized messages
 - **Input Validation**: Dedicated validation package with error constants
 - **Testing**: Unit tests for validation logic
 - **Database Layer**: PostgreSQL with sqlc-generated type-safe queries
