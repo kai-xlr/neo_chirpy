@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/kai-xlr/neo_chirpy/internal/database"
 )
 
@@ -77,6 +78,49 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, response)
 }
 
+// handlerChirpByID handles GET /api/chirps/{id} requests.
+// It retrieves a specific chirp by its ID from the database.
+// Returns 200 OK with the chirp on success, 404 if not found, 500 for server errors.
+func (cfg *apiConfig) handlerChirpByID(w http.ResponseWriter, r *http.Request) {
+	if !requireMethod(w, r, http.MethodGet) {
+		return
+	}
+
+	// Extract chirp ID from URL path
+	path := r.URL.Path
+	if !pathMatch(path, "/api/chirps/") {
+		respondWithError(w, http.StatusNotFound, "404 page not found", nil)
+		return
+	}
+
+	// Extract ID from path "/api/chirps/{id}"
+	chirpID := extractIDFromPath(path, "/api/chirps/")
+	if chirpID == "" {
+		respondWithError(w, http.StatusBadRequest, "Chirp ID is required", nil)
+		return
+	}
+
+	// Parse UUID
+	parsedID, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID format", err)
+		return
+	}
+
+	// Retrieve chirp from database
+	dbChirp, err := cfg.db.GetChirpByID(r.Context(), parsedID)
+	if err != nil {
+		if err.Error() == "no rows in result set" || err.Error() == "sql: no rows in result set" {
+			respondWithError(w, http.StatusNotFound, "404 page not found", nil)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, ErrMsgRetrieveChirp, err)
+		}
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, buildChirpResponse(dbChirp))
+}
+
 // handlerChirps routes chirp-related requests to the appropriate handler.
 // It supports GET (retrieve all chirps) and POST (create new chirp) methods.
 // Returns 405 Method Not Allowed for unsupported HTTP methods.
@@ -89,4 +133,17 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	default:
 		respondWithError(w, http.StatusMethodNotAllowed, ErrMsgMethodNotAllowed, nil)
 	}
+}
+
+// pathMatch checks if the path starts with the given prefix
+func pathMatch(path, prefix string) bool {
+	return len(path) > len(prefix) && path[:len(prefix)] == prefix
+}
+
+// extractIDFromPath extracts the ID part from a path like "/api/chirps/{id}"
+func extractIDFromPath(path, prefix string) string {
+	if len(path) <= len(prefix) {
+		return ""
+	}
+	return path[len(prefix):]
 }

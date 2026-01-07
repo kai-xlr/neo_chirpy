@@ -7,8 +7,9 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - **Static File Serving**: Serves HTML, CSS, and assets from the root directory
 - **Request Metrics**: Tracks the number of requests to `/app/*` endpoints
 - **Health Check**: Provides a readiness endpoint for monitoring
-- **Chirp Management**: Create and store chirp messages (max 140 characters)
+- **Chirp Management**: Create, retrieve, and store chirp messages (max 140 characters)
 - **Profanity Filtering**: Automatically sanitizes banned words in chirps
+- **Individual Chirp Retrieval**: Fetch specific chirps by UUID
 - **Database Integration**: PostgreSQL database with user and chirp management
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
@@ -22,6 +23,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 ### API
 - `GET /api/healthz` - Health check endpoint (returns "OK")
 - `GET /api/chirps` - Retrieve all chirps (ordered by creation date, oldest first)
+- `GET /api/chirps/{id}` - Retrieve a specific chirp by ID
 - `POST /api/chirps` - Create a new chirp (max 140 characters, filters profanity)
 - `POST /api/users` - Create a new user account
 

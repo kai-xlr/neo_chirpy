@@ -73,6 +73,7 @@ func setupRouter(apiCfg *apiConfig) *http.ServeMux {
 	// API endpoints
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/api/chirps", apiCfg.handlerChirps)
+	mux.HandleFunc("/api/chirps/", apiCfg.handlerChirpByID)
 	mux.HandleFunc("/api/users", apiCfg.handlerUsersCreate)
 
 	// Admin endpoints

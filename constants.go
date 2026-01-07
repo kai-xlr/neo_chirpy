@@ -13,5 +13,6 @@ const (
 	ErrMsgDecodeParams     = "Couldn't decode parameters"
 	ErrMsgCreateChirp      = "Couldn't create chirp"
 	ErrMsgRetrieveChirps   = "Couldn't retrieve chirps"
+	ErrMsgRetrieveChirp    = "Couldn't retrieve chirp"
 	ErrMsgMethodNotAllowed = "Method not allowed"
 )
