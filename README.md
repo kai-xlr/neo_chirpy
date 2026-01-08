@@ -1,6 +1,6 @@
 # NeoChirpy
 
-A lightweight HTTP server written in Go with built-in metrics tracking, chirp validation, and PostgreSQL database integration.
+A lightweight HTTP server written in Go with built-in metrics tracking, chirp validation, user authentication, and PostgreSQL database integration.
 
 ## Features
 
@@ -10,6 +10,9 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - **Chirp Management**: Create, retrieve, and store chirp messages (max 140 characters)
 - **Profanity Filtering**: Automatically sanitizes banned words in chirps
 - **Individual Chirp Retrieval**: Fetch specific chirps by UUID
+- **User Authentication**: Secure password-based user registration and login
+- **Password Security**: Argon2id hashing for secure password storage
+- **JWT Tokens**: Access token generation for authenticated sessions
 - **Database Integration**: PostgreSQL database with user and chirp management
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
@@ -25,7 +28,30 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - `GET /api/chirps` - Retrieve all chirps (ordered by creation date, oldest first)
 - `GET /api/chirps/{id}` - Retrieve a specific chirp by ID
 - `POST /api/chirps` - Create a new chirp (max 140 characters, filters profanity)
-- `POST /api/users` - Create a new user account
+- `POST /api/users` - Create a new user account with password
+- `POST /api/login` - Authenticate user and return access token
+
+#### Authentication
+
+**User Registration**
+```json
+POST /api/users
+{
+  "email": "user@example.com",
+  "password": "securepassword123"
+}
+```
+
+**User Login**
+```json
+POST /api/login
+{
+  "email": "user@example.com", 
+  "password": "securepassword123"
+}
+```
+
+Returns user data with access token for authenticated sessions.
 
 ### Admin
 - `GET /admin/metrics` - Display hit counter with HTML dashboard
@@ -90,10 +116,11 @@ go test -cover
 ├── constants.go       # Application-wide constants
 ├── validation.go      # Input validation functions
 ├── validation_test.go # Unit tests for validation
+├── auth_helpers.go    # Authentication helper functions
 ├── handlers.go        # HTTP helper functions
 ├── handlers_api.go    # API endpoint handlers (with documentation)
 ├── handlers_admin.go  # Admin endpoint handlers
-├── handlers_users.go  # User management handlers
+├── handlers_users.go  # User management and auth handlers
 ├── middleware.go      # HTTP middleware functions
 ├── json.go            # JSON response helpers and response builders
 ├── sanitize.go        # Profanity filtering logic
@@ -102,7 +129,9 @@ go test -cover
 │   ├── schema/        # Database migration files
 │   └── queries/       # SQL queries for sqlc
 ├── internal/
-│   └── database/      # Generated database access code
+│   ├── database/      # Generated database access code
+│   └── auth/         # Authentication utilities
+│       └── passwords.go # Password hashing and verification
 ├── index.html         # Landing page
 └── assets/            # Static assets (images, etc.)
 ```
@@ -112,14 +141,29 @@ go test -cover
 - **Thread-Safe Metrics**: Uses `atomic.Int32` for concurrent request counting
 - **Middleware Pattern**: Request tracking implemented as HTTP middleware
 - **JSON API**: Structured error handling and JSON responses
+- **Authentication System**:
+  - Argon2id password hashing for secure storage
+  - JWT-style access token generation
+  - Input validation for authentication requests
+  - Clear separation between validation and business logic
 - **Code Organization**: 
   - Main function split into `initDatabase()`, `setupRouter()`, and `startServer()` helpers
   - Handlers organized by domain (API, Admin, Users)
   - Consistent file structure: package → imports → structs → functions
   - Centralized validation with reusable functions
+  - Authentication helpers in dedicated `auth_helpers.go`
   - Comprehensive documentation and response builders
   - Error handling with standardized messages
 - **Input Validation**: Dedicated validation package with error constants
 - **Testing**: Unit tests for validation logic
 - **Database Layer**: PostgreSQL with sqlc-generated type-safe queries
 - **Migration Management**: Goose for database schema versioning
+- **Security**: Password hashing, input validation, and structured error handling
+
+## Security Features
+
+- **Password Security**: Uses Argon2id (recommended password hashing algorithm)
+- **Input Validation**: Comprehensive validation for all user inputs
+- **Error Handling**: Consistent error responses that don't leak sensitive information
+- **Token Generation**: Placeholder JWT implementation for authenticated sessions
+- **Database Security**: Type-safe SQL queries prevent injection attacks

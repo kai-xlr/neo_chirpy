@@ -22,6 +22,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
+	jwtSecret      string
 }
 
 func main() {
@@ -33,6 +34,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
 		platform:       platform,
+		jwtSecret:      "your-secret-key-here", // TODO: Move to environment variable
 	}
 
 	// Setup HTTP router
@@ -75,6 +77,7 @@ func setupRouter(apiCfg *apiConfig) *http.ServeMux {
 	mux.HandleFunc("/api/chirps", apiCfg.handlerChirps)
 	mux.HandleFunc("/api/chirps/", apiCfg.handlerChirpByID)
 	mux.HandleFunc("/api/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("/api/login", apiCfg.handlerLogin)
 
 	// Admin endpoints
 	mux.HandleFunc("/admin/metrics", apiCfg.handlerMetrics)
