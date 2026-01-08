@@ -12,7 +12,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - **Individual Chirp Retrieval**: Fetch specific chirps by UUID
 - **User Authentication**: Secure password-based user registration and login
 - **Password Security**: Argon2id hashing for secure password storage
-- **JWT Tokens**: Access token generation for authenticated sessions
+- **JWT Authentication**: Complete JWT token generation and validation with HS256 signing
 - **Database Integration**: PostgreSQL database with user and chirp management
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
@@ -51,7 +51,7 @@ POST /api/login
 }
 ```
 
-Returns user data with access token for authenticated sessions.
+Returns user data with signed JWT access token for authenticated sessions.
 
 ### Admin
 - `GET /admin/metrics` - Display hit counter with HTML dashboard
@@ -105,6 +105,9 @@ go test -run TestValidateChirpBody
 
 # Run tests with coverage
 go test -cover
+
+# Run auth package tests
+go test ./internal/auth/ -v
 ```
 
 ## Project Structure
@@ -131,7 +134,8 @@ go test -cover
 ├── internal/
 │   ├── database/      # Generated database access code
 │   └── auth/         # Authentication utilities
-│       └── passwords.go # Password hashing and verification
+│       ├── passwords.go # Password hashing and verification
+│       └── passwords_test.go # Comprehensive JWT and password tests
 ├── index.html         # Landing page
 └── assets/            # Static assets (images, etc.)
 ```
@@ -143,9 +147,11 @@ go test -cover
 - **JSON API**: Structured error handling and JSON responses
 - **Authentication System**:
   - Argon2id password hashing for secure storage
-  - JWT-style access token generation
+  - Complete JWT implementation with HS256 signing
+  - Token validation with expiration and signature verification
   - Input validation for authentication requests
   - Clear separation between validation and business logic
+  - Comprehensive test coverage for JWT operations
 - **Code Organization**: 
   - Main function split into `initDatabase()`, `setupRouter()`, and `startServer()` helpers
   - Handlers organized by domain (API, Admin, Users)
@@ -165,5 +171,5 @@ go test -cover
 - **Password Security**: Uses Argon2id (recommended password hashing algorithm)
 - **Input Validation**: Comprehensive validation for all user inputs
 - **Error Handling**: Consistent error responses that don't leak sensitive information
-- **Token Generation**: Placeholder JWT implementation for authenticated sessions
+- **Token Generation**: Complete JWT implementation with proper signing and validation
 - **Database Security**: Type-safe SQL queries prevent injection attacks
