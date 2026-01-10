@@ -2,6 +2,8 @@ package auth
 
 import (
 	"errors"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -129,4 +131,25 @@ func CreateAccessToken(userID uuid.UUID) (string, error) {
 	// Use a reasonable default expiration time (1 hour)
 	tokenSecret := "default-secret-key" // In production, this should come from environment
 	return MakeJWT(userID, tokenSecret, time.Hour)
+}
+
+// GetBearerToken extracts the bearer token from the Authorization header
+func GetBearerToken(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", ErrInvalidToken
+	}
+
+	// Check if the header starts with "Bearer "
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return "", ErrInvalidToken
+	}
+
+	// Extract the token part after "Bearer "
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == "" {
+		return "", ErrInvalidToken
+	}
+
+	return token, nil
 }

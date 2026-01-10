@@ -16,8 +16,7 @@ type chirpResponse struct {
 }
 
 type chirpCreateRequest struct {
-	Body   string    `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
+	Body string `json:"body"`
 }
 
 type chirpCreateResponse struct {
@@ -46,8 +45,9 @@ type userResponse struct {
 }
 
 type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ExpiresInSeconds *int   `json:"expires_in_seconds,omitempty"`
 }
 
 type loginResponse struct {

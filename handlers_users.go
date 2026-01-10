@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/kai-xlr/neo_chirpy/internal/auth"
 	"github.com/kai-xlr/neo_chirpy/internal/database"
@@ -81,8 +82,18 @@ func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create access token
-	token, err := auth.CreateAccessToken(user.ID)
+	// Determine token expiration time
+	expirationTime := time.Hour // Default 1 hour
+	if params.ExpiresInSeconds != nil {
+		requestedDuration := time.Duration(*params.ExpiresInSeconds) * time.Second
+		// Cap at 1 hour maximum
+		if requestedDuration < time.Hour {
+			expirationTime = requestedDuration
+		}
+	}
+
+	// Create access token with the JWT secret from apiConfig
+	token, err := auth.MakeJWT(user.ID, a.jwtSecret, expirationTime)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create token", err)
 		return

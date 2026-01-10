@@ -13,6 +13,8 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - **User Authentication**: Secure password-based user registration and login
 - **Password Security**: Argon2id hashing for secure password storage
 - **JWT Authentication**: Complete JWT token generation and validation with HS256 signing
+- **Bearer Token Authentication**: Protected endpoints require valid JWT in Authorization header
+- **Configurable Token Expiration**: Optional custom expiration times for JWT tokens
 - **Database Integration**: PostgreSQL database with user and chirp management
 - **Metrics Dashboard**: View request statistics in HTML format
 - **Metrics Reset**: Clear the request counter
@@ -27,7 +29,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - `GET /api/healthz` - Health check endpoint (returns "OK")
 - `GET /api/chirps` - Retrieve all chirps (ordered by creation date, oldest first)
 - `GET /api/chirps/{id}` - Retrieve a specific chirp by ID
-- `POST /api/chirps` - Create a new chirp (max 140 characters, filters profanity)
+- `POST /api/chirps` - Create a new chirp (requires authentication, max 140 characters, filters profanity)
 - `POST /api/users` - Create a new user account with password
 - `POST /api/login` - Authenticate user and return access token
 
@@ -47,11 +49,23 @@ POST /api/users
 POST /api/login
 {
   "email": "user@example.com", 
-  "password": "securepassword123"
+  "password": "securepassword123",
+  "expires_in_seconds": 3600
 }
 ```
 
-Returns user data with signed JWT access token for authenticated sessions.
+Returns user data with signed JWT access token for authenticated sessions. The `expires_in_seconds` field is optional (defaults to 1 hour, maximum 1 hour).
+
+**Creating Chirps (Authenticated)**
+```json
+POST /api/chirps
+Authorization: Bearer <jwt_token>
+{
+  "body": "This is a new chirp!"
+}
+```
+
+Requires a valid JWT token in the Authorization header. The user ID is automatically extracted from the token.
 
 ### Admin
 - `GET /admin/metrics` - Display hit counter with HTML dashboard
@@ -83,6 +97,12 @@ Create a `.env` file in the project root:
 ```env
 DB_URL=postgres://username:password@localhost:5432/chirpy?sslmode=disable
 PLATFORM=dev
+JWT_SECRET=<your-super-secret-jwt-key>
+```
+
+Generate a secure JWT secret with:
+```bash
+openssl rand -base64 64
 ```
 
 ### Development
@@ -149,6 +169,9 @@ go test ./internal/auth/ -v
   - Argon2id password hashing for secure storage
   - Complete JWT implementation with HS256 signing
   - Token validation with expiration and signature verification
+  - Bearer token extraction from Authorization headers
+  - Protected endpoints with automatic user identification
+  - Configurable token expiration with security limits
   - Input validation for authentication requests
   - Clear separation between validation and business logic
   - Comprehensive test coverage for JWT operations
@@ -172,4 +195,6 @@ go test ./internal/auth/ -v
 - **Input Validation**: Comprehensive validation for all user inputs
 - **Error Handling**: Consistent error responses that don't leak sensitive information
 - **Token Generation**: Complete JWT implementation with proper signing and validation
+- **Bearer Token Authentication**: Secure Bearer token extraction and validation
+- **Protected Endpoints**: JWT-based authorization for sensitive operations
 - **Database Security**: Type-safe SQL queries prevent injection attacks

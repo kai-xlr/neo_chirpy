@@ -27,14 +27,14 @@ type apiConfig struct {
 
 func main() {
 	// Load environment and initialize database
-	dbQueries, platform := initDatabase()
+	dbQueries, platform, jwtSecret := initDatabase()
 
 	// Initialize API configuration
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
 		platform:       platform,
-		jwtSecret:      "your-secret-key-here", // TODO: Move to environment variable
+		jwtSecret:      jwtSecret,
 	}
 
 	// Setup HTTP router
@@ -44,7 +44,7 @@ func main() {
 	startServer(mux)
 }
 
-func initDatabase() (*database.Queries, string) {
+func initDatabase() (*database.Queries, string, string) {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
@@ -56,12 +56,17 @@ func initDatabase() (*database.Queries, string) {
 		log.Fatal("PLATFORM must be set")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
 	}
 
-	return database.New(db), platform
+	return database.New(db), platform, jwtSecret
 }
 
 func setupRouter(apiCfg *apiConfig) *http.ServeMux {

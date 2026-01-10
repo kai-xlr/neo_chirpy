@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/kai-xlr/neo_chirpy/internal/auth"
 	"github.com/kai-xlr/neo_chirpy/internal/database"
 )
 
@@ -21,10 +22,23 @@ func handlerReadiness(w http.ResponseWriter, r *http.Request) {
 }
 
 // handlerChirpsCreate handles POST /api/chirps requests.
-// It validates the chirp body, filters profanity, and stores the chirp in the database.
-// Returns 201 Created on success, 400 for validation errors, 500 for server errors.
+// It validates the JWT token, chirp body, filters profanity, and stores the chirp in the database.
+// Returns 201 Created on success, 401 for invalid token, 400 for validation errors, 500 for server errors.
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodPost) {
+		return
+	}
+
+	// Extract and validate JWT token
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenString, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token", err)
 		return
 	}
 
@@ -48,7 +62,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	// Insert chirp into database using generated sqlc code
 	createdChirp, dbErr := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,
-		UserID: request.UserID,
+		UserID: userID,
 	})
 	if dbErr != nil {
 		respondWithError(w, http.StatusInternalServerError, ErrMsgCreateChirp, dbErr)
