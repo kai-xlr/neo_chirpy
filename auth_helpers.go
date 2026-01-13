@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kai-xlr/neo_chirpy/internal/auth"
 	"github.com/kai-xlr/neo_chirpy/internal/database"
@@ -24,6 +25,17 @@ func validateUserCreationRequest(req userRequest) error {
 		return err
 	}
 	if req.Password == "" {
+		return auth.ErrPasswordEmpty
+	}
+	return nil
+}
+
+// validateUserUpdateRequest checks if user update request is valid
+func validateUserUpdateRequest(req userUpdateRequest) error {
+	if err := ValidateEmail(req.Email); err != nil {
+		return err
+	}
+	if strings.TrimSpace(req.Password) == "" {
 		return auth.ErrPasswordEmpty
 	}
 	return nil

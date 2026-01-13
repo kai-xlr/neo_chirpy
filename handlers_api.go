@@ -92,15 +92,12 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, response)
 }
 
-// handlerChirpByID handles GET /api/chirps/{id} requests.
-// It retrieves a specific chirp by its ID from the database.
-// Returns 200 OK with the chirp on success, 404 if not found, 500 for server errors.
+// handlerChirpByID handles GET and DELETE /api/chirps/{id} requests.
+// GET: retrieves a specific chirp by its ID from the database.
+// DELETE: deletes a chirp by its ID (requires authentication and ownership).
+// Returns appropriate status codes for each method and error condition.
 func (cfg *apiConfig) handlerChirpByID(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	// Extract chirp ID from URL path
+	// Extract chirp ID from URL path (common to both GET and DELETE)
 	path := r.URL.Path
 	if !pathMatch(path, "/api/chirps/") {
 		respondWithError(w, http.StatusNotFound, "404 page not found", nil)
@@ -121,8 +118,22 @@ func (cfg *apiConfig) handlerChirpByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch r.Method {
+	case http.MethodGet:
+		cfg.handlerChirpByIDGet(w, r, parsedID)
+	case http.MethodDelete:
+		cfg.handlerChirpByIDDelete(w, r, parsedID)
+	default:
+		respondWithError(w, http.StatusMethodNotAllowed, ErrMsgMethodNotAllowed, nil)
+	}
+}
+
+// handlerChirpByIDGet handles GET /api/chirps/{id} requests.
+// It retrieves a specific chirp by its ID from the database.
+// Returns 200 OK with the chirp on success, 404 if not found, 500 for server errors.
+func (cfg *apiConfig) handlerChirpByIDGet(w http.ResponseWriter, r *http.Request, chirpID uuid.UUID) {
 	// Retrieve chirp from database
-	dbChirp, err := cfg.db.GetChirpByID(r.Context(), parsedID)
+	dbChirp, err := cfg.db.GetChirpByID(r.Context(), chirpID)
 	if err != nil {
 		if err.Error() == "no rows in result set" || err.Error() == "sql: no rows in result set" {
 			respondWithError(w, http.StatusNotFound, "404 page not found", nil)
@@ -135,8 +146,53 @@ func (cfg *apiConfig) handlerChirpByID(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, buildChirpResponse(dbChirp))
 }
 
+// handlerChirpByIDDelete handles DELETE /api/chirps/{id} requests.
+// It validates the JWT token, checks if user is the author of the chirp, and deletes it.
+// Returns 204 No Content on success, 401 for invalid token, 403 if not author, 404 if not found, 500 for server errors.
+func (cfg *apiConfig) handlerChirpByIDDelete(w http.ResponseWriter, r *http.Request, chirpID uuid.UUID) {
+	// Extract and validate JWT token
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenString, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token", err)
+		return
+	}
+
+	// Retrieve chirp from database to verify ownership
+	dbChirp, err := cfg.db.GetChirpByID(r.Context(), chirpID)
+	if err != nil {
+		if err.Error() == "no rows in result set" || err.Error() == "sql: no rows in result set" {
+			respondWithError(w, http.StatusNotFound, "404 page not found", nil)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, ErrMsgRetrieveChirp, err)
+		}
+		return
+	}
+
+	// Check if user is the author of the chirp
+	if dbChirp.UserID != userID {
+		respondWithError(w, http.StatusForbidden, "Forbidden", nil)
+		return
+	}
+
+	// Delete chirp from database
+	err = cfg.db.DeleteChirp(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't delete chirp", err)
+		return
+	}
+
+	// Return 204 No Content for successful deletion
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // handlerChirps routes chirp-related requests to the appropriate handler.
-// It supports GET (retrieve all chirps) and POST (create new chirp) methods.
+// It supports GET (retrieve all chirps), POST (create new chirp), and DELETE (delete chirp) methods.
 // Returns 405 Method Not Allowed for unsupported HTTP methods.
 func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {

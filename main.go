@@ -81,8 +81,10 @@ func setupRouter(apiCfg *apiConfig) *http.ServeMux {
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/api/chirps", apiCfg.handlerChirps)
 	mux.HandleFunc("/api/chirps/", apiCfg.handlerChirpByID)
-	mux.HandleFunc("/api/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("/api/users", apiCfg.handlerUsers)
 	mux.HandleFunc("/api/login", apiCfg.handlerLogin)
+	mux.HandleFunc("/api/refresh", apiCfg.handlerRefresh)
+	mux.HandleFunc("/api/revoke", apiCfg.handlerRevoke)
 
 	// Admin endpoints
 	mux.HandleFunc("/admin/metrics", apiCfg.handlerMetrics)
