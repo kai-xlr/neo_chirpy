@@ -53,9 +53,17 @@ WHERE refresh_tokens.token = $1
   AND refresh_tokens.revoked_at IS NULL
 `
 
-func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (User, error) {
+type GetUserFromRefreshTokenRow struct {
+	ID             uuid.UUID
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Email          string
+	HashedPassword string
+}
+
+func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (GetUserFromRefreshTokenRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserFromRefreshToken, token)
-	var i User
+	var i GetUserFromRefreshTokenRow
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,

@@ -58,10 +58,11 @@ func (a *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	// Return user response (excluding sensitive data)
 	respondWithJSON(w, http.StatusCreated, userResponse{
 		User: User{
-			ID:        user.ID,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-			Email:     user.Email,
+			ID:          user.ID,
+			CreatedAt:   user.CreatedAt,
+			UpdatedAt:   user.UpdatedAt,
+			Email:       user.Email,
+			IsChirpyRed: user.IsChirpyRed,
 		},
 	})
 }
@@ -124,6 +125,7 @@ func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,
 		Email:        user.Email,
+		IsChirpyRed:  user.IsChirpyRed,
 		Token:        accessToken,
 		RefreshToken: refreshTokenString,
 	})
@@ -246,10 +248,11 @@ func (a *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request) {
 	// Return updated user response (excluding sensitive data)
 	respondWithJSON(w, http.StatusOK, userResponse{
 		User: User{
-			ID:        updatedUser.ID,
-			CreatedAt: updatedUser.CreatedAt,
-			UpdatedAt: updatedUser.UpdatedAt,
-			Email:     updatedUser.Email,
+			ID:          updatedUser.ID,
+			CreatedAt:   updatedUser.CreatedAt,
+			UpdatedAt:   updatedUser.UpdatedAt,
+			Email:       updatedUser.Email,
+			IsChirpyRed: updatedUser.IsChirpyRed,
 		},
 	})
 }

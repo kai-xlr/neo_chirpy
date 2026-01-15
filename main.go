@@ -85,6 +85,7 @@ func setupRouter(apiCfg *apiConfig) *http.ServeMux {
 	mux.HandleFunc("/api/login", apiCfg.handlerLogin)
 	mux.HandleFunc("/api/refresh", apiCfg.handlerRefresh)
 	mux.HandleFunc("/api/revoke", apiCfg.handlerRevoke)
+	mux.HandleFunc("/api/polka/webhooks", apiCfg.handlerPolkaWebhooks)
 
 	// Admin endpoints
 	mux.HandleFunc("/admin/metrics", apiCfg.handlerMetrics)

@@ -217,3 +217,40 @@ func extractIDFromPath(path, prefix string) string {
 	}
 	return path[len(prefix):]
 }
+
+// handlerPolkaWebhooks handles POST /api/polka/webhooks requests.
+// It processes user upgrade events from Polka payment system.
+// Returns 204 No Content for successful processing or ignored events, 404 if user not found.
+func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Request) {
+	if !requireMethod(w, r, http.MethodPost) {
+		return
+	}
+
+	// Parse JSON from request body
+	var request webhookRequest
+	decodeErr := json.NewDecoder(r.Body).Decode(&request)
+	if decodeErr != nil {
+		respondWithError(w, http.StatusInternalServerError, ErrMsgDecodeParams, decodeErr)
+		return
+	}
+
+	// If event is not user.upgraded, respond with 204 (we don't care about other events)
+	if request.Event != "user.upgraded" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	// Upgrade user to Chirpy Red
+	_, err := cfg.db.UpgradeUserToChirpyRed(r.Context(), request.Data.UserID)
+	if err != nil {
+		if err.Error() == "no rows in result set" || err.Error() == "sql: no rows in result set" {
+			respondWithError(w, http.StatusNotFound, "User not found", err)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't upgrade user", err)
+		}
+		return
+	}
+
+	// Return 204 No Content for successful upgrade
+	w.WriteHeader(http.StatusNoContent)
+}

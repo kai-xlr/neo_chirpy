@@ -34,10 +34,11 @@ type userRequest struct {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Email       string    `json:"email"`
+	IsChirpyRed bool      `json:"is_chirpy_red"`
 }
 
 type userResponse struct {
@@ -54,6 +55,7 @@ type loginResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 	Token        string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
 }
@@ -65,4 +67,14 @@ type refreshResponse struct {
 type userUpdateRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+// Webhook types
+type webhookRequest struct {
+	Event string      `json:"event"`
+	Data  webhookData `json:"data"`
+}
+
+type webhookData struct {
+	UserID uuid.UUID `json:"user_id"`
 }
