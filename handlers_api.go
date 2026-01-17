@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/kai-xlr/neo_chirpy/internal/auth"
@@ -73,18 +74,63 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 }
 
 // handlerChirpsGet handles GET /api/chirps requests.
-// It retrieves all chirps from the database ordered by creation date (oldest first).
+// It retrieves chirps from the database ordered by creation date.
+// Accepts optional author_id query parameter to filter by author.
+// Accepts optional sort query parameter with values "asc" or "desc" (default: "asc").
 // Returns 200 OK with an array of chirps on success, 500 for server errors.
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
-	// Retrieve all chirps from database, ordered by creation date (oldest first)
-	dbChirps, dbErr := cfg.db.GetChirpsAsc(r.Context())
+	// Check for optional query parameters
+	authorIDStr := r.URL.Query().Get("author_id")
+	sortParam := r.URL.Query().Get("sort")
+
+	// Default to "asc" if no sort parameter provided
+	if sortParam == "" {
+		sortParam = "asc"
+	}
+
+	// Validate sort parameter
+	if sortParam != "asc" && sortParam != "desc" {
+		respondWithError(w, http.StatusBadRequest, "Invalid sort parameter. Must be 'asc' or 'desc'", nil)
+		return
+	}
+
+	var dbChirps []database.Chirp
+	var dbErr error
+
+	if authorIDStr != "" {
+		// Parse author_id as UUID
+		authorID, parseErr := uuid.Parse(authorIDStr)
+		if parseErr != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid author_id format", parseErr)
+			return
+		}
+
+		// Retrieve chirps for specific author (ascending order is fine, we'll sort in-memory)
+		dbChirps, dbErr = cfg.db.GetChirpsByAuthorAsc(r.Context(), authorID)
+	} else {
+		// Retrieve all chirps (ascending order is fine, we'll sort in-memory)
+		dbChirps, dbErr = cfg.db.GetChirpsAsc(r.Context())
+	}
+
 	if dbErr != nil {
 		respondWithError(w, http.StatusInternalServerError, ErrMsgRetrieveChirps, dbErr)
 		return
+	}
+
+	// Sort chirps in-memory based on the sort parameter
+	if sortParam == "desc" {
+		sort.Slice(dbChirps, func(i, j int) bool {
+			return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt)
+		})
+	} else {
+		// sortParam == "asc" - already sorted this way, but ensure consistency
+		sort.Slice(dbChirps, func(i, j int) bool {
+			return dbChirps[i].CreatedAt.Before(dbChirps[j].CreatedAt)
+		})
 	}
 
 	// Convert database chirps to API response format using helper function
@@ -220,9 +266,21 @@ func extractIDFromPath(path, prefix string) string {
 
 // handlerPolkaWebhooks handles POST /api/polka/webhooks requests.
 // It processes user upgrade events from Polka payment system.
-// Returns 204 No Content for successful processing or ignored events, 404 if user not found.
+// Returns 204 No Content for successful processing or ignored events, 404 if user not found, 401 if unauthorized.
 func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodPost) {
+		return
+	}
+
+	// Validate API key
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, auth.ErrUnauthorized.Error(), err)
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, auth.ErrUnauthorized.Error(), auth.ErrUnauthorized)
 		return
 	}
 
@@ -241,7 +299,7 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Upgrade user to Chirpy Red
-	_, err := cfg.db.UpgradeUserToChirpyRed(r.Context(), request.Data.UserID)
+	_, err = cfg.db.UpgradeUserToChirpyRed(r.Context(), request.Data.UserID)
 	if err != nil {
 		if err.Error() == "no rows in result set" || err.Error() == "sql: no rows in result set" {
 			respondWithError(w, http.StatusNotFound, "User not found", err)

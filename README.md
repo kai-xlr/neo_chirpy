@@ -10,6 +10,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 - **Chirp Management**: Create, retrieve, and store chirp messages (max 140 characters)
 - **Profanity Filtering**: Automatically sanitizes banned words in chirps
 - **Individual Chirp Retrieval**: Fetch specific chirps by UUID
+- **Advanced Chirp Filtering**: Filter chirps by author ID and sort by creation date (asc/desc)
 - **User Authentication**: Secure password-based user registration and login
 - **Password Security**: Argon2id hashing for secure password storage
 - **JWT Authentication**: Complete JWT token generation and validation with HS256 signing
@@ -27,7 +28,7 @@ A lightweight HTTP server written in Go with built-in metrics tracking, chirp va
 
 ### API
 - `GET /api/healthz` - Health check endpoint (returns "OK")
-- `GET /api/chirps` - Retrieve all chirps (ordered by creation date, oldest first)
+- `GET /api/chirps` - Retrieve chirps with optional filtering and sorting
 - `GET /api/chirps/{id}` - Retrieve a specific chirp by ID
 - `POST /api/chirps` - Create a new chirp (requires authentication, max 140 characters, filters profanity)
 - `POST /api/users` - Create a new user account with password
@@ -66,6 +67,31 @@ Authorization: Bearer <jwt_token>
 ```
 
 Requires a valid JWT token in the Authorization header. The user ID is automatically extracted from the token.
+
+**Retrieving Chirps**
+```bash
+GET /api/chirps
+```
+
+Supports optional query parameters for filtering and sorting:
+
+- `author_id` (UUID): Filter chirps by specific author
+- `sort` (string): Sort order - `asc` (default) or `desc`
+
+Examples:
+```bash
+# Get all chirps, sorted by creation date (oldest first)
+GET /api/chirps
+
+# Get all chirps, sorted by creation date (newest first)  
+GET /api/chirps?sort=desc
+
+# Get chirps from specific author, sorted oldest first
+GET /api/chirps?author_id=550e8400-e29b-41d4-a716-446655440000
+
+# Get chirps from specific author, sorted newest first
+GET /api/chirps?author_id=550e8400-e29b-41d4-a716-446655440000&sort=desc
+```
 
 ### Admin
 - `GET /admin/metrics` - Display hit counter with HTML dashboard
