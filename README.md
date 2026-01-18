@@ -110,8 +110,12 @@ All endpoints return 405 (Method Not Allowed) for unsupported HTTP methods.
 ### Running the Server
 
 ```bash
-go build -o out
-./out
+# Build and run
+go build -o chirpy ./cmd/web
+./chirpy
+
+# Or run directly
+go run ./cmd/web
 ```
 
 The server will start on port 8080.
@@ -134,7 +138,12 @@ openssl rand -base64 64
 ### Development
 
 ```bash
-go run .
+# Run from project root
+go run ./cmd/web
+
+# Or build and run
+go build -o chirpy ./cmd/web
+./chirpy
 ```
 
 ### Testing
@@ -152,38 +161,60 @@ go test -run TestValidateChirpBody
 # Run tests with coverage
 go test -cover
 
-# Run auth package tests
+# Run specific package tests
 go test ./internal/auth/ -v
+go test ./pkg/validation/ -v
+
+# Run all tests with coverage
+go test -cover ./...
+```
 ```
 
 ## Project Structure
 
 ```
 .
-├── main.go            # Server setup and configuration
-├── types.go           # Request/response type definitions
-├── constants.go       # Application-wide constants
-├── validation.go      # Input validation functions
-├── validation_test.go # Unit tests for validation
-├── auth_helpers.go    # Authentication helper functions
-├── handlers.go        # HTTP helper functions
-├── handlers_api.go    # API endpoint handlers (with documentation)
-├── handlers_admin.go  # Admin endpoint handlers
-├── handlers_users.go  # User management and auth handlers
-├── middleware.go      # HTTP middleware functions
-├── json.go            # JSON response helpers and response builders
-├── sanitize.go        # Profanity filtering logic
-├── AGENTS.md          # Guidelines for agentic coding agents
-├── sql/
-│   ├── schema/        # Database migration files
-│   └── queries/       # SQL queries for sqlc
-├── internal/
-│   ├── database/      # Generated database access code
-│   └── auth/         # Authentication utilities
-│       ├── passwords.go # Password hashing and verification
-│       └── passwords_test.go # Comprehensive JWT and password tests
-├── index.html         # Landing page
-└── assets/            # Static assets (images, etc.)
+├── cmd/
+│   └── web/
+│       └── main.go            # Application entry point and server setup
+├── pkg/                     # Public library code organized by domain
+│   ├── admin/
+│   │   └── handlers_admin.go # Admin endpoints and metrics
+│   ├── chirp/
+│   │   ├── handlers.go       # Chirp CRUD operations
+│   │   └── sanitize.go     # Profanity filtering
+│   ├── handlers/
+│   │   ├── handlers.go      # Common HTTP utilities
+│   │   └── health.go       # Health check endpoint
+│   ├── middleware/
+│   │   └── middleware.go   # HTTP middleware components
+│   ├── types/
+│   │   ├── types.go         # Shared types and structs
+│   │   └── constants.go     # Application constants
+│   ├── user/
+│   │   ├── handlers.go       # User management endpoints
+│   │   └── auth_helpers.go  # Authentication helpers
+│   ├── validation/
+│   │   ├── validation.go     # Input validation logic
+│   │   ├── constants.go     # Validation constants
+│   │   └── validation_test.go # Unit tests
+│   └── webhook/
+│       └── handlers.go      # External webhook handling
+├── internal/                # Internal packages (not for external use)
+│   ├── auth/              # Authentication utilities
+│   │   ├── passwords.go    # Password hashing and verification
+│   │   └── passwords_test.go # Auth tests
+│   └── database/          # Database access layer
+│       ├── db.go          # Database connection
+│       └── *.sql.go      # Generated queries (sqlc)
+├── sql/                   # Database schema and queries
+│   ├── schema/           # Migration files (Goose format)
+│   └── queries/          # SQL queries for code generation
+├── index.html           # Landing page
+├── assets/              # Static assets
+├── AGENTS.md           # Development guidelines
+├── sqlc.yaml          # SQL code generation config
+└── go.mod/go.sum      # Go module definition
 ```
 
 ## Architecture
@@ -202,13 +233,14 @@ go test ./internal/auth/ -v
   - Clear separation between validation and business logic
   - Comprehensive test coverage for JWT operations
 - **Code Organization**: 
-  - Main function split into `initDatabase()`, `setupRouter()`, and `startServer()` helpers
-  - Handlers organized by domain (API, Admin, Users)
-  - Consistent file structure: package → imports → structs → functions
-  - Centralized validation with reusable functions
-  - Authentication helpers in dedicated `auth_helpers.go`
-  - Comprehensive documentation and response builders
-  - Error handling with standardized messages
+  - **Idiomatic Go Structure**: Follows standard project-layout conventions
+  - **Domain-Driven Design**: Packages organized by business domain (admin, chirp, user, webhook)
+  - **Clear Separation**: `cmd/` for applications, `pkg/` for libraries, `internal/` for private code
+  - **Clean Architecture**: Each package handles specific responsibilities with minimal coupling
+  - **Consistent Structure**: Package → imports → types → functions
+  - **Centralized Validation**: Reusable validation functions and error constants
+  - **Modular Design**: Each handler package is self-contained and testable
+  - **Comprehensive Documentation**: Clear function documentation and README
 - **Input Validation**: Dedicated validation package with error constants
 - **Testing**: Unit tests for validation logic
 - **Database Layer**: PostgreSQL with sqlc-generated type-safe queries

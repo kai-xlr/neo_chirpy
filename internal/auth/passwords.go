@@ -21,6 +21,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrInvalidToken       = errors.New("invalid token")
 	ErrExpiredToken       = errors.New("token has expired")
+	ErrUnauthorized       = errors.New("unauthorized")
 )
 
 // HashPassword creates a secure hash from a plain text password
@@ -154,6 +155,28 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 
 	return token, nil
+}
+
+// GetAPIKey extracts the API key from the Authorization header
+// Expected format: "Authorization: ApiKey THE_KEY_HERE"
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", ErrInvalidToken
+	}
+
+	// Check if the header starts with "ApiKey "
+	if !strings.HasPrefix(authHeader, "ApiKey ") {
+		return "", ErrInvalidToken
+	}
+
+	// Extract the key part after "ApiKey "
+	key := strings.TrimPrefix(authHeader, "ApiKey ")
+	if key == "" {
+		return "", ErrInvalidToken
+	}
+
+	return key, nil
 }
 
 // MakeRefreshToken generates a cryptographically secure random refresh token
